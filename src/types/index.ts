@@ -1,8 +1,13 @@
+<<<<<<< HEAD
 import { type Product } from "@/db/schema"
 import { type FileWithPath } from "react-dropzone"
+=======
+
+import type { FileWithPath } from "react-dropzone"
+>>>>>>> 7256339 (up date)
 
 import { type Icons } from "@/components/icons"
-
+import { type Database } from "./database.types";
 export interface NavItem {
   title: string
   href?: string
@@ -55,6 +60,7 @@ export interface CheckoutItem extends CartItem {
 export interface CartLineItem
   extends Pick<
     Product,
+<<<<<<< HEAD
     | "id"
     | "name"
     | "images"
@@ -63,6 +69,9 @@ export interface CartLineItem
     | "price"
     | "inventory"
     | "storeId"
+=======
+    "id" | "name" | "images" | "price" | "inventory" | "store_id"
+>>>>>>> 7256339 (up date)
   > {
   quantity?: number
   storeName: string | null
@@ -74,3 +83,10 @@ export type SubscriptionPlan = {
   stripePriceId: string
   monthlyPrice?: number | null
 }
+
+
+
+export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+export type Product = Database["public"]["Tables"]["products"]["Row"];
+export type Cart = Database["public"]["Tables"]["carts"]["Row"];
+export type Store = Database["public"]["Tables"]["stores"]["Row"];

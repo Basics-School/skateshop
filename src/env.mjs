@@ -9,12 +9,12 @@ export const env = createEnv({
   server: {
     DATABASE_URL: z.string(),
     NODE_ENV: z.enum(["development", "test", "production"]),
-    CLERK_SECRET_KEY: z.string(),
     UPLOADTHING_SECRET: z.string(),
     UPLOADTHING_APP_ID: z.string(),
     STRIPE_API_KEY: z.string(),
     STRIPE_WEBHOOK_SECRET: z.string(),
     STRIPE_PRO_STORE_PRICE_ID: z.string(),
+  
   },
 
   /**
@@ -23,7 +23,8 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
+    NEXT_PUBLIC_SUPABASE_URL: z.string(),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string(),
   },
 
   /**
@@ -33,14 +34,13 @@ export const env = createEnv({
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
-      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-    CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
     UPLOADTHING_SECRET: process.env.UPLOADTHING_SECRET,
     UPLOADTHING_APP_ID: process.env.UPLOADTHING_APP_ID,
     STRIPE_API_KEY: process.env.STRIPE_API_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     STRIPE_PRO_STORE_PRICE_ID: process.env.STRIPE_PRO_STORE_PRICE_ID,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.EXT_PUBLIC_SUPABASE_ANON_KEY
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation.

@@ -1,8 +1,11 @@
 import Image from "next/image"
 import Link from "next/link"
-import { db } from "@/db"
-import { products, stores } from "@/db/schema"
-import { desc } from "drizzle-orm"
+import { cookies } from 'next/headers'
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+
+import type { Database } from '@/lib/database.types'
+
+
 
 import { productCategories } from "@/config/products"
 import { cn } from "@/lib/utils"
@@ -24,18 +27,10 @@ import { Shell } from "@/components/shell"
 export const runtime = "edge"
 
 export default async function IndexPage() {
-  const allProducts = await db
-    .select()
-    .from(products)
-    .limit(8)
-    .orderBy(desc(products.createdAt))
-
-  const allStores = await db
-    .select()
-    .from(stores)
-    .limit(4)
-    .orderBy(desc(stores.createdAt))
-
+  const supabase = createServerComponentClient<Database>({ cookies })
+const {data:products} = await supabase.from("products").select("*")
+const {data:stores} = await supabase.from("stores").select("*")
+ 
   return (
     <div>
       <Hero />
@@ -48,18 +43,18 @@ export default async function IndexPage() {
         <div className="space-y-5">
           <h2 className="text-2xl font-medium">Categories</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {Object.values(products.category.enumValues).map((category) => (
+            {products?.map((product) => (
               <Link
-                aria-label={`Go to ${category}`}
-                key={category}
-                href={`/categories/${category}`}
+                aria-label={`Go to ${product.category}`}
+                key={product.category}
+                href={`/categories/${product.category}`}
               >
                 <div className="group relative overflow-hidden rounded">
                   <AspectRatio ratio={4 / 5}>
                     <div className="absolute inset-0 z-10 bg-black/60 transition-colors group-hover:bg-black/70" />
                     <Image
-                      src={`https://source.unsplash.com/featured/?${category}`}
-                      alt={category}
+                      src={`https://source.unsplash.com/featured/?${product.category}`}
+                      alt={product.category}
                       fill
                       className="object-cover transition-transform group-hover:scale-105"
                       loading="lazy"
@@ -67,7 +62,7 @@ export default async function IndexPage() {
                   </AspectRatio>
                   <div className="absolute inset-0 z-20 flex items-center justify-center">
                     <h3 className="text-2xl font-medium capitalize text-slate-100">
-                      {category}
+                      {product.category}
                     </h3>
                   </div>
                 </div>
@@ -109,24 +104,24 @@ export default async function IndexPage() {
             </Link>
           </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {allProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {products?.map((product) => (
+              <ProductCard key={product?.id} product={product} />
             ))}
           </div>
         </div>
         <div className="space-y-5">
           <h2 className="text-2xl font-medium">Featured stores</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {allStores.map((store) => (
-              <Card key={store.id} className="flex h-full flex-col">
+            {stores?.map((store) => (
+              <Card key={store?.id} className="flex h-full flex-col">
                 <CardHeader className="flex-1">
-                  <CardTitle className="line-clamp-1">{store.name}</CardTitle>
+                  <CardTitle className="line-clamp-1">{store?.name}</CardTitle>
                   <CardDescription className="line-clamp-2">
-                    {store.description}
+                    {store?.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Link href={`/products?store_ids=${store.id}`}>
+                  <Link href={`/products?store_ids=${store?.id}`}>
                     <div
                       className={cn(
                         buttonVariants({
@@ -136,7 +131,7 @@ export default async function IndexPage() {
                       )}
                     >
                       View products
-                      <span className="sr-only">{`${store.name} store products`}</span>
+                      <span className="sr-only">{`${store?.name} store products`}</span>
                     </div>
                   </Link>
                 </CardContent>

@@ -1,30 +1,19 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { db } from "@/db"
-import { products, type Product } from "@/db/schema"
+import { cookies } from "next/headers"
 import type { StoredFile } from "@/types"
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  gt,
-  gte,
-  inArray,
-  like,
-  lt,
-  lte,
-  not,
-  sql,
-} from "drizzle-orm"
-import { type z } from "zod"
+import { createServerActionClient } from "@supabase/auth-helpers-nextjs"
+import { z } from "zod"
 
-import type {
+import type { Database } from "@/types/database.types"
+import {
   getProductSchema,
   getProductsSchema,
   productSchema,
 } from "@/lib/validations/product"
+
+const supabase = createServerActionClient<Database>({ cookies })
 
 export async function filterProductsAction(query: string) {
   if (typeof query !== "string") {
@@ -33,26 +22,18 @@ export async function filterProductsAction(query: string) {
 
   if (query.length === 0) return null
 
-  const filteredProducts = await db
-    .select({
-      id: products.id,
-      name: products.name,
-      category: products.category,
-    })
-    .from(products)
-    .where(like(products.name, `%${query}%`))
-    .orderBy(desc(products.createdAt))
-    .limit(10)
+  const { data: filteredProducts, error } = await supabase
+    .from("products")
+    .select("id,name,category")
+    .ilike("name", `%${query}%`)
+    .range(0, 9)
+  if (error) return null
+  const categories = [...new Set(filteredProducts.map(product => product.category))];
 
-  const productsByCategory = Object.values(products.category.enumValues).map(
-    (category) => ({
-      category,
-      products: filteredProducts.filter(
-        (product) => product.category === category
-      ),
-    })
-  )
-
+  const productsByCategory = categories.map(category => ({
+    category,
+    products: filteredProducts.filter(product => product.category === category)
+  }));
   return productsByCategory
 }
 
@@ -61,19 +42,19 @@ export async function getProductsAction(
 ) {
   const [column, order] =
     (input.sort?.split(".") as [
-      keyof Product | undefined,
+      keyof typeof products | undefined,
       "asc" | "desc" | undefined
     ]) ?? []
   const [minPrice, maxPrice] = input.price_range?.split("-") ?? []
   const categories =
-    (input.categories?.split(".") as Product["category"][]) ?? []
+    (input.categories?.split(".") as (typeof products)["category"][]) ?? []
   const subcategories = input.subcategories?.split(".") ?? []
   const storeIds = input.store_ids?.split(".").map(Number) ?? []
 
   const { items, total } = await db.transaction(async (tx) => {
     const items = await tx
       .select()
-      .from(products)
+      .from("products")
       .limit(input.limit)
       .offset(input.offset)
       .where(
@@ -84,8 +65,8 @@ export async function getProductsAction(
           subcategories.length
             ? inArray(products.subcategory, subcategories)
             : undefined,
-          minPrice ? gte(products.price, minPrice) : undefined,
-          maxPrice ? lte(products.price, maxPrice) : undefined,
+          minPrice ? gte(products.price, parseInt(minPrice)) : undefined,
+          maxPrice ? lte(products.price, parseInt(maxPrice)) : undefined,
           storeIds.length ? inArray(products.storeId, storeIds) : undefined
         )
       )
@@ -110,8 +91,8 @@ export async function getProductsAction(
           subcategories.length
             ? inArray(products.subcategory, subcategories)
             : undefined,
-          minPrice ? gte(products.price, minPrice) : undefined,
-          maxPrice ? lte(products.price, maxPrice) : undefined,
+          minPrice ? gte(products.price, parseInt(minPrice)) : undefined,
+          maxPrice ? lte(products.price, parseInt(maxPrice)) : undefined,
           storeIds.length ? inArray(products.storeId, storeIds) : undefined
         )
       )
@@ -198,12 +179,9 @@ export async function deleteProductAction(
     throw new Error("Invalid input.")
   }
 
-  and(eq(products.id, input.id), eq(products.storeId, input.storeId)),
-    await db
-      .delete(products)
-      .where(
-        and(eq(products.id, input.id), eq(products.storeId, input.storeId))
-      )
+  await db
+    .delete(products)
+    .where(and(eq(products.id, input.id), eq(products.storeId, input.storeId)))
 
   revalidatePath(`/dashboard/stores/${input.storeId}/products`)
 }
@@ -260,7 +238,7 @@ export async function getPreviousProductIdAction(
 
   const product = await db.query.products.findFirst({
     where: and(eq(products.storeId, input.storeId), lt(products.id, input.id)),
-    orderBy: desc(products.id),
+    orderBy: products.id,
   })
 
   if (!product) {

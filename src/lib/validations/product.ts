@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 import { products } from "@/db/schema"
 import * as z from "zod"
+=======
+
+import { z } from "zod"
+>>>>>>> 7256339 (up date)
 
 export const productSchema = z.object({
   name: z.string().min(1, {
@@ -7,10 +12,10 @@ export const productSchema = z.object({
   }),
   description: z.string().optional(),
   category: z
-    .enum(products.category.enumValues, {
+    .enum(["skateboard", "clothings", "shoes","accessories"], {
       required_error: "Must be a valid category",
     })
-    .default(products.category.enumValues[0]),
+    .default("skateboard"),
   subcategory: z.string().optional().nullable(),
   price: z.string().regex(/^\d+(\.\d{1,2})?$/, {
     message: "Must be a valid price",

@@ -1,12 +1,9 @@
 "use client"
-
-import * as React from "react"
-import { useRouter } from "next/navigation"
-import { type Product } from "@/db/schema"
-
-import { cn } from "@/lib/utils"
-import { useDebounce } from "@/hooks/use-debounce"
-import { Button } from "@/components/ui/button"
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { useDebounce } from "@/hooks/use-debounce";
+import { Button } from "@/components/ui/button";
 import {
   CommandDialog,
   CommandEmpty,
@@ -14,57 +11,69 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Icons } from "@/components/icons"
-import { filterProductsAction } from "@/app/_actions/product"
+} from "@/components/ui/command";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Icons } from "@/components/icons";
+import { filterProductsAction } from "@/app/_actions/product";
+interface Data {
+  category: string;
+  products: Array<{
+    id: number;
+    name: string;
+    category: string;
+  }>;
+}
 
 export function Combobox() {
-  const router = useRouter()
-  const [isOpen, setIsOpen] = React.useState(false)
-  const [query, setQuery] = React.useState("")
-  const debouncedQuery = useDebounce(query, 300)
-  const [data, setData] = React.useState<
-    | {
-        category: Product["category"]
-        products: Pick<Product, "id" | "name" | "category">[]
-      }[]
-    | null
-  >(null)
-  const [isPending, startTransition] = React.useTransition()
+  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query, 300);
+  const [data, setData] = useState<Data[] |null>(null);
+  const [isPending, setIsPending] = useState(false);
 
-  React.useEffect(() => {
-    if (debouncedQuery.length === 0) setData(null)
+  useEffect(() => {
+    if (debouncedQuery.length === 0) {
+      setData(null);
+    }
 
     if (debouncedQuery.length > 0) {
-      startTransition(async () => {
-        const data = await filterProductsAction(debouncedQuery)
-        setData(data)
-      })
+      setIsPending(true);
+      filterProductsAction(debouncedQuery)
+        .then((data) => {
+          setData(data);
+          setIsPending(false);
+        })
+        .catch((error) => {
+          console.error("Error fetching products:", error);
+          setIsPending(false);
+        });
     }
-  }, [debouncedQuery])
-
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+  }, [debouncedQuery]);
+  useEffect(() => {
+    const handleKeyDown = (e:KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setIsOpen((isOpen) => !isOpen)
+        e.preventDefault();
+        setIsOpen((isOpen) => !isOpen);
       }
-    }
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [])
+    };
 
-  const handleSelect = React.useCallback((callback: () => unknown) => {
-    setIsOpen(false)
-    callback()
-  }, [])
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+  type CallbackFunction = () => void;
+  const handleSelect = (callback:CallbackFunction) => {
+    setIsOpen(false);
+    callback();
+  };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isOpen) {
-      setQuery("")
+      setQuery("");
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   return (
     <>
@@ -98,14 +107,14 @@ export function Combobox() {
               <Skeleton className="h-8 rounded-sm" />
               <Skeleton className="h-8 rounded-sm" />
             </div>
-          ) : (
+          ) :(
             data?.map((group) => (
               <CommandGroup
                 key={group.category}
                 className="capitalize"
                 heading={group.category}
               >
-                {group.products.map((item) => (
+                {(group.products || []).map((item:any) => (
                   <CommandItem
                     key={item.id}
                     onSelect={() =>
@@ -117,9 +126,10 @@ export function Combobox() {
                 ))}
               </CommandGroup>
             ))
-          )}
+          )
+                  }
         </CommandList>
       </CommandDialog>
     </>
-  )
+  );
 }

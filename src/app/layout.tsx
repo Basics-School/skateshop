@@ -1,14 +1,18 @@
 import "@/styles/globals.css"
 
 import type { Metadata } from "next"
-import { ClerkProvider } from "@clerk/nextjs"
+import { cookies } from 'next/headers'
 
 import { siteConfig } from "@/config/site"
 import { fontMono, fontSans } from "@/lib/fonts"
 import { cn } from "@/lib/utils"
 import { Toaster } from "@/components/ui/toaster"
+import SupabaseAuthProvider from "@/components/providers/supabase-auth-provider"
+import SupabaseProvider from "@/components/providers/supabase-provider"
 import { TailwindIndicator } from "@/components/tailwind-indicator"
 import { ThemeProvider } from "@/components/theme-provider"
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
+import type { Database } from "@/types/database.types"
 
 export const metadata: Metadata = {
   title: {
@@ -64,27 +68,37 @@ interface RootLayoutProps {
   children: React.ReactNode
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default async function RootLayout({ children }: RootLayoutProps) {
+  const supabase = createServerComponentClient<Database>({cookies});
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   return (
     <>
-      <ClerkProvider>
-        <html lang="en" suppressHydrationWarning>
-          <head />
-          <body
-            className={cn(
-              "min-h-screen bg-background font-sans antialiased",
-              fontSans.variable,
-              fontMono.variable
-            )}
-          >
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-              {children}
-              <TailwindIndicator />
-            </ThemeProvider>
-            <Toaster />
-          </body>
-        </html>
-      </ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        <head />
+        <body
+          className={cn(
+            "min-h-screen bg-background font-sans antialiased",
+            fontSans.variable,
+            fontMono.variable
+          )}
+        >
+          <SupabaseProvider>
+            <SupabaseAuthProvider serverSession={session}>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+              >
+                {children}
+                <TailwindIndicator />
+              </ThemeProvider>
+              <Toaster />
+            </SupabaseAuthProvider>
+          </SupabaseProvider>
+        </body>
+      </html>
     </>
   )
 }
