@@ -34,8 +34,7 @@ import { Slider } from "@/components/ui/slider"
 import { Icons } from "@/components/icons"
 import { MultiSelect } from "@/components/multi-select"
 import { PaginationButton } from "@/components/pagination-button"
-
-import { ProductCard } from "./product-card"
+import { ProductCard } from "@/components/product-card"
 
 interface ProductsProps {
   products: Product[]
@@ -330,8 +329,7 @@ export function Products({
               <Separator className="my-4" />
               <SheetFooter>
                 <Button
-                  aria-label="Clear Filters"
-                  variant="secondary"
+                  aria-label="Clear filters"
                   size="sm"
                   className="w-full"
                   onClick={() => {
@@ -399,11 +397,7 @@ export function Products({
       ) : null}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            isPending={isPending}
-          />
+          <ProductCard key={product.id} product={product} />
         ))}
       </div>
       {products.length ? (

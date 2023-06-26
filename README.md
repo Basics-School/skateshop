@@ -1,6 +1,6 @@
 # [Skateshop13](https://skateshop13.vercel.app/)
 
-This is an open source e-commerce skateshop build with everything new in Next.js 13. It is built with the [T3 Stack](https://create.t3.gg/) and bootstrapped with `create-t3-app`.
+This is an open source e-commerce skateshop build with everything new in Next.js 13. It is bootstrapped with `create-t3-app`.
 
 [![Skateshop13](./public/screenshot.png)](https://skateshop13.vercel.app/)
 
@@ -15,11 +15,13 @@ This is an open source e-commerce skateshop build with everything new in Next.js
 - [Clerk Auth](https://clerk.dev)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [Tailwind CSS](https://tailwindcss.com)
+- [uploadthing](https://uploadthing.com)
 - [Stripe](https://stripe.com)
 
 ## Features
 
 - Authentication with Clerk
+- File uploads with uploadthing
 - Subscription, payment, and billing with Stripe
 - Storefront with products and categories
 - Seller and customer workflows

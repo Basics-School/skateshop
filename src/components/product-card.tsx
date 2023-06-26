@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { type Product } from "@/db/schema"
@@ -19,17 +20,19 @@ import { Icons } from "@/components/icons"
 
 interface ProductCardProps {
   product: Product
-  isPending?: boolean
-  variant?: "default" | "selectable"
-  onSelect?: () => void
+  variant?: "default" | "switchable"
+  isAddedToCart?: boolean
+  onSwitch?: () => Promise<void>
 }
 
 export function ProductCard({
   product,
-  isPending = false,
   variant = "default",
-  onSelect,
+  isAddedToCart = false,
+  onSwitch,
 }: ProductCardProps) {
+  const [isPending, startTransition] = React.useTransition()
+
   return (
     <Card className="h-full overflow-hidden rounded-sm">
       <Link
@@ -43,7 +46,7 @@ export function ProductCard({
                 src={
                   product.images[0]?.url ?? "/images/product-placeholder.webp"
                 }
-                alt={product.images[0]?.name ?? "Product image"}
+                alt={product.images[0]?.name ?? product.name}
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="object-cover"
@@ -96,19 +99,27 @@ export function ProductCard({
           </div>
         ) : (
           <Button
-            aria-label="Select product"
+            aria-label={isAddedToCart ? "Remove from cart" : "Add to cart"}
             size="sm"
             className="h-8 w-full rounded-sm"
-            onClick={onSelect}
+            onClick={() => {
+              startTransition(async () => {
+                await onSwitch?.()
+              })
+            }}
             disabled={isPending}
           >
-            {isPending && (
+            {isPending ? (
               <Icons.spinner
-                className="mr-2 h-5 w-5 animate-spin"
+                className="mr-2 h-4 w-4 animate-spin"
                 aria-hidden="true"
               />
+            ) : isAddedToCart ? (
+              <Icons.check className="mr-2 h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Icons.add className="mr-2 h-4 w-4" aria-hidden="true" />
             )}
-            Select
+            {isAddedToCart ? "Added" : "Add to cart"}
           </Button>
         )}
       </CardFooter>

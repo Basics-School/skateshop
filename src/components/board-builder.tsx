@@ -3,6 +3,7 @@
 import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { type Product } from "@/db/schema"
+import type { CartItem } from "@/types"
 import { toast } from "sonner"
 
 import { sortOptions } from "@/config/products"
@@ -30,16 +31,22 @@ import {
 import { Slider } from "@/components/ui/slider"
 import { Icons } from "@/components/icons"
 import { PaginationButton } from "@/components/pagination-button"
-import { addToCartAction } from "@/app/_actions/cart"
-
-import { ProductCard } from "./product-card"
+import { ProductCard } from "@/components/product-card"
+import { addToCartAction, deleteCartItemAction } from "@/app/_actions/cart"
 
 interface BoardBuilderProps {
   products: Product[]
   pageCount: number
+  subcategory: string | null
+  cartItems: CartItem[]
 }
 
-export function BoardBuilder({ products, pageCount }: BoardBuilderProps) {
+export function BoardBuilder({
+  products,
+  pageCount,
+  subcategory,
+  cartItems,
+}: BoardBuilderProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -83,6 +90,45 @@ export function BoardBuilder({ products, pageCount }: BoardBuilderProps) {
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedPrice])
+
+  // Add to cart
+  const addToCart = React.useCallback(
+    async (product: Product) => {
+      try {
+        if (!cartItems.map((item) => item.productId).includes(product.id)) {
+          // Only allow one product per subcategory in cart
+          const productIdWithSameSubcategory = cartItems.find(
+            (item) => item.productSubcategory === product.subcategory
+          )?.productId
+
+          if (productIdWithSameSubcategory) {
+            await deleteCartItemAction({
+              productId: productIdWithSameSubcategory,
+            })
+          }
+
+          await addToCartAction({
+            productId: product.id,
+            quantity: 1,
+            productSubcategory: product.subcategory ?? subcategory,
+          })
+
+          toast.success("Added to cart.")
+          return
+        }
+
+        await deleteCartItemAction({
+          productId: product.id,
+        })
+        toast.success("Removed from cart.")
+      } catch (error) {
+        error instanceof Error
+          ? toast.error(error.message)
+          : toast.error("Something went wrong, please try again.")
+      }
+    },
+    [subcategory, cartItems]
+  )
 
   return (
     <div className="flex flex-col space-y-6">
@@ -147,8 +193,7 @@ export function BoardBuilder({ products, pageCount }: BoardBuilderProps) {
               <Separator className="my-4" />
               <SheetFooter>
                 <Button
-                  aria-label="Clear Filters"
-                  variant="secondary"
+                  aria-label="Clear filters"
                   size="sm"
                   className="w-full"
                   onClick={() => {
@@ -212,24 +257,12 @@ export function BoardBuilder({ products, pageCount }: BoardBuilderProps) {
         {products.map((product) => (
           <ProductCard
             key={product.id}
+            variant="switchable"
             product={product}
-            variant="selectable"
-            isPending={isPending}
-            onSelect={() => {
-              startTransition(async () => {
-                try {
-                  await addToCartAction({
-                    productId: product.id,
-                    quantity: 1,
-                  })
-                  toast.success("Added to cart.")
-                } catch (error) {
-                  error instanceof Error
-                    ? toast.error(error.message)
-                    : toast.error("Something went wrong, please try again.")
-                }
-              })
-            }}
+            isAddedToCart={cartItems
+              .map((item) => item.productId)
+              .includes(product.id)}
+            onSwitch={() => addToCart(product)}
           />
         ))}
       </div>

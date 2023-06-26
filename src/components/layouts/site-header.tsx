@@ -15,6 +15,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { CartSheet } from "@/components/cart/cart-sheet"
 import { Combobox } from "@/components/combobox"
 import { Icons } from "@/components/icons"
 import { MainNav } from "@/components/layouts/main-nav"
@@ -41,21 +42,14 @@ export function SiteHeader({ user }: SiteHeaderProps) {
           sidebarNavItems={dashboardConfig.sidebarNav}
         />
         <div className="flex flex-1 items-center justify-end space-x-4">
-          <nav className="flex items-center space-x-1">
+          <nav className="flex items-center space-x-2">
             <Combobox />
-            <Button
-              aria-label="Cart"
-              variant="outline"
-              size="sm"
-              className="w-9 px-0"
-            >
-              <Icons.cart className="h-5 w-5" />
-            </Button>
+            <CartSheet />
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     className="relative h-8 w-8 rounded-full"
                   >
                     <Avatar className="h-8 w-8">
